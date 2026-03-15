@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Plus, Trash2, Eye } from 'lucide-react';
-
-type Team = {
-    id: string;
-    name: string;
-    primaryColor: string;
-    secondaryColor: string;
-    city: string;
-    state: string;
-    mascot: string;
-    logo: string;
-    alumni: string;
-    seed: number;
-    region: string;
-};
+import { Settings, Save, Plus, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Team } from '../types';
 
 export default function AdminTeams() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [status, setStatus] = useState('');
-    const [previewId, setPreviewId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/teams')
@@ -33,7 +21,7 @@ export default function AdminTeams() {
             .catch((e) => console.error("Could not load backend:", e));
     }, []);
 
-    const handleSave = async (idToPreview?: string) => {
+    const handleSave = async (id?: string) => {
         setStatus('Saving...');
         try {
             const res = await fetch('/api/teams', {
@@ -43,8 +31,8 @@ export default function AdminTeams() {
             });
             if (res.ok) {
                 setStatus('Saved successfully!');
-                if (idToPreview) {
-                    setPreviewId(idToPreview);
+                if (id) {
+                    setEditingId(null);
                 }
                 setTimeout(() => setStatus(''), 3000);
             } else {
@@ -57,8 +45,9 @@ export default function AdminTeams() {
     };
 
     const addTeam = () => {
+        const newId = Math.random().toString(36).substr(2, 9);
         const newTeam: Team = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: newId,
             name: '',
             primaryColor: '#000000',
             secondaryColor: '#ffffff',
@@ -68,29 +57,28 @@ export default function AdminTeams() {
             logo: '',
             alumni: '',
             seed: 0,
-            region: ''
+            region: '',
+            espn_id: ''
         };
         setTeams([newTeam, ...teams]);
+        setEditingId(newId);
     };
 
-    const updateTeam = (id: string, field: keyof Team, value: string) => {
+    const updateTeam = <K extends keyof Team>(id: string, field: K, value: Team[K]) => {
         setTeams(teams.map(t => t.id === id ? { ...t, [field]: value } : t));
-        // Clear preview if they start editing again so they know it's stale
-        if (previewId === id) setPreviewId(null);
     };
 
     const deleteTeam = (id: string) => {
         if (confirm('Are you sure you want to delete this team?')) {
             setTeams(teams.filter(t => t.id !== id));
-            if (previewId === id) setPreviewId(null);
+            if (editingId === id) setEditingId(null);
         }
     };
 
-    // Helper to resolve image paths from the public/ or src/assets directory assuming the user drops them there
-    const getImageUrl = (filename: string) => {
-        if (!filename) return '';
-        // Defaulting to trying to load from src/assets since that's where Vite puts hero.png out of the box
-        return `/src/assets/${filename}`;
+    // Helper to fetch logos directly from ESPN using their team ID
+    const getImageUrl = (espnId: string | number | null) => {
+        if (!espnId) return '';
+        return `https://a.espncdn.com/i/teamlogos/ncaa/500/${espnId}.png`;
     };
 
     return (
@@ -101,6 +89,12 @@ export default function AdminTeams() {
                 </h1>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     {status && <span style={{ opacity: 0.8 }}>{status}</span>}
+                    <Link
+                        to="/admin/bracket"
+                        style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: '#e5e7eb', color: '#000', textDecoration: 'none', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                        Bracket Seeding
+                    </Link>
                     <button
                         onClick={addTeam}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -110,97 +104,92 @@ export default function AdminTeams() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                 {teams.map(team => (
-                    <div key={team.id} style={{ border: '1px solid #ddd', padding: '1.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'rgba(128,128,128,0.05)' }}>
+                    editingId === team.id ? (
+                        <div key={team.id} style={{ width: '100%', border: '1px solid #ddd', padding: '1.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'rgba(128,128,128,0.05)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>School Name</label>
+                                    <input value={team.name} onChange={(e) => updateTeam(team.id, 'name', e.target.value)} placeholder="e.g. Duke" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>School Name</label>
-                                <input value={team.name} onChange={(e) => updateTeam(team.id, 'name', e.target.value)} placeholder="e.g. Duke" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Mascot</label>
+                                    <input value={team.mascot} onChange={(e) => updateTeam(team.id, 'mascot', e.target.value)} placeholder="e.g. Blue Devils" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Mascot</label>
-                                <input value={team.mascot} onChange={(e) => updateTeam(team.id, 'mascot', e.target.value)} placeholder="e.g. Blue Devils" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>City</label>
+                                    <input value={team.city} onChange={(e) => updateTeam(team.id, 'city', e.target.value)} placeholder="e.g. Durham" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>City</label>
-                                <input value={team.city} onChange={(e) => updateTeam(team.id, 'city', e.target.value)} placeholder="e.g. Durham" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>State</label>
+                                    <input value={team.state} onChange={(e) => updateTeam(team.id, 'state', e.target.value)} placeholder="e.g. NC" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>State</label>
-                                <input value={team.state} onChange={(e) => updateTeam(team.id, 'state', e.target.value)} placeholder="e.g. NC" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>ESPN ID</label>
+                                    <input value={team.espn_id || ''} onChange={(e) => updateTeam(team.id, 'espn_id', e.target.value)} placeholder="e.g. 150 (Duke)" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Logo Filename (in src/assets/)</label>
-                                <input value={team.logo} onChange={(e) => updateTeam(team.id, 'logo', e.target.value)} placeholder="e.g. duke.png" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Famous Alumni</label>
+                                    <input value={team.alumni} onChange={(e) => updateTeam(team.id, 'alumni', e.target.value)} placeholder="e.g. Zion Williamson" style={{ padding: '0.5rem', width: '100%' }} />
+                                </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Famous Alumni</label>
-                                <input value={team.alumni} onChange={(e) => updateTeam(team.id, 'alumni', e.target.value)} placeholder="e.g. Zion Williamson" style={{ padding: '0.5rem' }} />
-                            </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', gridColumn: '1 / -1' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Primary Color</label>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <input type="color" value={team.primaryColor} onChange={(e) => updateTeam(team.id, 'primaryColor', e.target.value)} style={{ padding: '0', height: '35px', width: '35px' }} />
+                                            <input value={team.primaryColor} onChange={(e) => updateTeam(team.id, 'primaryColor', e.target.value)} style={{ padding: '0.5rem', width: '100%' }} />
+                                        </div>
+                                    </div>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Primary Color</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <input type="color" value={team.primaryColor} onChange={(e) => updateTeam(team.id, 'primaryColor', e.target.value)} style={{ padding: '0', height: '35px', width: '35px' }} />
-                                        <input value={team.primaryColor} onChange={(e) => updateTeam(team.id, 'primaryColor', e.target.value)} style={{ padding: '0.5rem', width: '100px' }} />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Secondary Color</label>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <input type="color" value={team.secondaryColor} onChange={(e) => updateTeam(team.id, 'secondaryColor', e.target.value)} style={{ padding: '0', height: '35px', width: '35px' }} />
+                                            <input value={team.secondaryColor} onChange={(e) => updateTeam(team.id, 'secondaryColor', e.target.value)} style={{ padding: '0.5rem', width: '100%' }} />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Seed</label>
+                                        <input type="number" value={team.seed === null ? '' : team.seed} onChange={(e) => updateTeam(team.id, 'seed', parseInt(e.target.value) || null)} style={{ padding: '0.5rem', width: '100%' }} />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Region</label>
+                                        <select value={team.region || ''} onChange={(e) => updateTeam(team.id, 'region', e.target.value)} style={{ padding: '0.5rem', width: '100%' }}>
+                                            <option value="">Select Region</option>
+                                            <option value="east">East</option>
+                                            <option value="west">West</option>
+                                            <option value="south">South</option>
+                                            <option value="midwest">Midwest</option>
+                                        </select>
                                     </div>
                                 </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Secondary Color</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <input type="color" value={team.secondaryColor} onChange={(e) => updateTeam(team.id, 'secondaryColor', e.target.value)} style={{ padding: '0', height: '35px', width: '35px' }} />
-                                        <input value={team.secondaryColor} onChange={(e) => updateTeam(team.id, 'secondaryColor', e.target.value)} style={{ padding: '0.5rem', width: '100px' }} />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Seed</label>
-                                    <input value={team.seed} onChange={(e) => updateTeam(team.id, 'seed', e.target.value)} style={{ padding: '0.5rem' }} />
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Region</label>
-                                    <select value={team.region} onChange={(e) => updateTeam(team.id, 'region', e.target.value)} style={{ padding: '0.5rem' }}>
-                                        <option value="">Select Region</option>
-                                        <option value="east">East</option>
-                                        <option value="west">West</option>
-                                        <option value="south">South</option>
-                                        <option value="midwest">Midwest</option>
-                                    </select>
-                                </div>
                             </div>
-                        </div>
 
-                        {/* Action Bar & Preview Area */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(128,128,128,0.2)' }}>
-                            {previewId === team.id ? (
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', gap: '1rem',
-                                    padding: '0.5rem 1rem', borderRadius: '4px',
-                                    background: team.primaryColor, color: team.secondaryColor,
-                                    border: `2px solid ${team.secondaryColor}`
-                                }}>
-                                    {team.logo && <img src={getImageUrl(team.logo)} alt="Logo" style={{ height: '40px', objectFit: 'contain' }} onError={(e) => (e.currentTarget.style.display = 'none')} />}
-                                    <strong style={{ fontSize: '1.2rem' }}>{team.name} {team.mascot}</strong>
+                            {/* Action Bar */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(128,128,128,0.2)' }}>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        onClick={() => handleSave(team.id)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        <Save size={18} /> Save & Close
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingId(null)}
+                                        style={{ padding: '0.5rem 1rem', background: '#555', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        Close
+                                    </button>
                                 </div>
-                            ) : <div />}
-
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button
-                                    onClick={() => handleSave(team.id)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                                >
-                                    <Save size={18} /> Save & Preview
-                                </button>
                                 <button
                                     onClick={() => deleteTeam(team.id)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -210,11 +199,33 @@ export default function AdminTeams() {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div
+                            key={team.id}
+                            onClick={() => setEditingId(team.id)}
+                            style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                padding: '1rem', borderRadius: '8px', cursor: 'pointer',
+                                background: team.primaryColor || '#ddd', color: team.secondaryColor || '#000',
+                                border: `2px solid ${team.secondaryColor || 'transparent'}`,
+                                width: '180px', minHeight: '180px', height: 'auto', textAlign: 'center',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                transition: 'transform 0.1s ease',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            title="Click to edit"
+                        >
+                            {team.espn_id && <img src={getImageUrl(team.espn_id)} alt="Logo" style={{ height: '50px', objectFit: 'contain', backgroundColor: '#fff' }} onError={(e) => (e.currentTarget.style.display = 'none')} />}
+                            <strong style={{ fontSize: '1.2rem', lineHeight: '1.2', margin: 0 }}>{team.name || 'New Team'}</strong>
+                            {team.mascot && <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>{team.mascot}</span>}
+                            {(team.seed || team.region) && <span style={{ fontSize: '0.8rem', opacity: 0.8, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>{team.seed ? `#${team.seed} ` : ''}{team.region}</span>}
+                        </div>
+                    )
                 ))}
 
                 {teams.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
+                    <div style={{ width: '100%', textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
                         No teams found. Click "Add Team" to start.
                     </div>
                 )}
