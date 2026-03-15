@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App.tsx';
 import Home from './pages/Home.tsx';
 import BracketBuilder from './pages/BracketBuilder.tsx';
+import AdminTeams from './pages/AdminTeams.tsx';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -13,6 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<App />}>
           <Route index element={<Home />} />
           <Route path="bracket" element={<BracketBuilder />} />
+          <Route path="admin/teams" element={<AdminTeams />} />
         </Route>
       </Routes>
     </BrowserRouter>
