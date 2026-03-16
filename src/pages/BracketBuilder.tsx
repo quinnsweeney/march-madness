@@ -650,7 +650,12 @@ export default function BracketBuilder() {
           {roundNames[activeMatchup.round]}
         </h3>
         <h2 style={{ fontSize: "2rem" }}>
-          {activeMatchup.region?.toUpperCase()} Region
+          {activeMatchup.region &&
+          activeMatchup.region !== "Final Four" &&
+          activeMatchup.region !== "Championship"
+            ? activeMatchup.region.toUpperCase()
+            : ""}
+          Region
         </h2>
       </div>
 
