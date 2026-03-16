@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+src/pages/AdminTeams.tsx
+src/pages/AdminBracket.tsx
