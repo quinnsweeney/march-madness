@@ -347,7 +347,11 @@ export default function BracketBuilder() {
       case "logo":
         return team.espn_id ? (
           <img
-            src={`https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${team.espn_id}.png`}
+            src={
+              team.switchlogo
+                ? `https://a.espncdn.com/i/teamlogos/ncaa/500/${team.espn_id}.png`
+                : `https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${team.espn_id}.png`
+            }
             alt={team.name}
             style={{ width: "120px", height: "120px", objectFit: "contain" }}
           />
@@ -388,21 +392,53 @@ export default function BracketBuilder() {
         );
       case "location":
         return (
-          <h2 style={{ fontSize: "2.5rem" }}>
-            {team.city}, {team.state}
-          </h2>
+          <div
+            style={{
+              textAlign: "center",
+              maxWidth: "400px",
+              background: "rgba(255,255,255,0.1)",
+              padding: "1rem",
+              borderRadius: "8px",
+            }}
+          >
+            <h2 style={{ fontSize: "2.5rem" }}>
+              {team.city}, {team.state}
+            </h2>
+          </div>
         );
       case "mascot":
         return (
-          <h2 style={{ fontSize: "2.5rem", color: team.primaryColor }}>
-            The {team.mascot}
+          <h2
+            style={{
+              fontSize: "2.5rem",
+              color: team.secondaryColor,
+              background: "rgba(255,255,255,0.1)",
+              padding: "1rem",
+              borderRadius: "8px",
+              maxWidth: "400px",
+            }}
+          >
+            {team.mascot}
           </h2>
         );
       case "alumni":
         return (
-          <h2 style={{ fontSize: "2.5rem" }}>
-            {team.alumni || "Unknown Celeb"}
-          </h2>
+          <div
+            style={{
+              textAlign: "center",
+              maxWidth: "400px",
+              background: "rgba(255,255,255,0.1)",
+              padding: "1rem",
+              borderRadius: "8px",
+            }}
+          >
+            <h2 style={{ fontSize: "2.5rem" }}>
+              {team.alumni || "Unknown Celeb"}
+            </h2>
+            <p style={{ fontSize: "1.2rem", margin: "0.5rem 0" }}>
+              {team.alumni_summary}
+            </p>
+          </div>
         );
       default:
         return <h2>{team.name}</h2>;
