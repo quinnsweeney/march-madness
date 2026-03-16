@@ -293,53 +293,53 @@ export default function BracketBuilder() {
     }, 800);
   };
 
-  const handleDevSkip = () => {
-    let newMatchups = [...matchups];
-    let newChoices = [...choices];
-    let newChampion = champion;
-    let currentM = findNextPlayableMatchup(newMatchups, newChampion);
+  // const handleDevSkip = () => {
+  //   let newMatchups = [...matchups];
+  //   let newChoices = [...choices];
+  //   let newChampion = champion;
+  //   let currentM = findNextPlayableMatchup(newMatchups, newChampion);
 
-    while (currentM) {
-      const winningTeam = currentM.teamB || currentM.teamA;
-      if (!winningTeam) break;
+  //   while (currentM) {
+  //     const winningTeam = currentM.teamB || currentM.teamA;
+  //     if (!winningTeam) break;
 
-      newChoices.push({ matchupId: currentM.id, winner: winningTeam });
+  //     newChoices.push({ matchupId: currentM.id, winner: winningTeam });
 
-      if (!currentM.nextMatchupId) {
-        newChampion = winningTeam;
-        currentM = null;
-        break;
-      }
+  //     if (!currentM.nextMatchupId) {
+  //       newChampion = winningTeam;
+  //       currentM = null;
+  //       break;
+  //     }
 
-      const nextMatchupId = currentM.nextMatchupId;
-      const nextIdx = newMatchups.findIndex((m) => m.id === nextMatchupId);
-      if (nextIdx > -1) {
-        if (currentM.isSubA) {
-          newMatchups[nextIdx] = {
-            ...newMatchups[nextIdx],
-            teamA: winningTeam,
-          };
-        } else {
-          newMatchups[nextIdx] = {
-            ...newMatchups[nextIdx],
-            teamB: winningTeam,
-          };
-        }
-      }
+  //     const nextMatchupId = currentM.nextMatchupId;
+  //     const nextIdx = newMatchups.findIndex((m) => m.id === nextMatchupId);
+  //     if (nextIdx > -1) {
+  //       if (currentM.isSubA) {
+  //         newMatchups[nextIdx] = {
+  //           ...newMatchups[nextIdx],
+  //           teamA: winningTeam,
+  //         };
+  //       } else {
+  //         newMatchups[nextIdx] = {
+  //           ...newMatchups[nextIdx],
+  //           teamB: winningTeam,
+  //         };
+  //       }
+  //     }
 
-      currentM = findNextPlayableMatchup(newMatchups, newChampion);
-    }
+  //     currentM = findNextPlayableMatchup(newMatchups, newChampion);
+  //   }
 
-    setMatchups(newMatchups);
-    setChoices(newChoices);
-    if (newChampion) {
-      setChampion(newChampion);
-      setCurrentMatchupId(null);
-    } else {
-      const nextM = findNextPlayableMatchup(newMatchups, newChampion);
-      setCurrentMatchupId(nextM ? nextM.id : null);
-    }
-  };
+  //   setMatchups(newMatchups);
+  //   setChoices(newChoices);
+  //   if (newChampion) {
+  //     setChampion(newChampion);
+  //     setCurrentMatchupId(null);
+  //   } else {
+  //     const nextM = findNextPlayableMatchup(newMatchups, newChampion);
+  //     setCurrentMatchupId(nextM ? nextM.id : null);
+  //   }
+  // };
 
   const renderTrait = (team: Team | null) => {
     if (!team) return "TBD";
@@ -478,7 +478,7 @@ export default function BracketBuilder() {
         }}
       >
         <h1 style={{ fontSize: "3rem", marginBottom: "1rem" }}>
-          🏆 Tournament Champion 🏆
+          Your Champion:
         </h1>
         <h2
           style={{
@@ -608,7 +608,7 @@ export default function BracketBuilder() {
       </button>
 
       {/* Dev Skip Button */}
-      <button
+      {/* <button
         onClick={handleDevSkip}
         style={{
           position: "absolute",
@@ -626,7 +626,7 @@ export default function BracketBuilder() {
         title="Dev Skip"
       >
         Dev Skip
-      </button>
+      </button> */}
 
       {/* Header info */}
       <div
