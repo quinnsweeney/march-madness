@@ -654,8 +654,7 @@ export default function BracketBuilder() {
           activeMatchup.region !== "Final Four" &&
           activeMatchup.region !== "Championship"
             ? activeMatchup.region.toUpperCase()
-            : ""}{" "}
-          Region
+            : ""}
         </h2>
       </div>
 
